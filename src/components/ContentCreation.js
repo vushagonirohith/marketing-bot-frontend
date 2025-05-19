@@ -11,6 +11,7 @@ const ContentCreation = ({ user }) => {
     linkedin: false,
   });
   const [templateFile, setTemplateFile] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const handlePlatformChange = (e) => {
     const { name, checked } = e.target;
@@ -25,15 +26,37 @@ const ContentCreation = ({ user }) => {
     });
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    if (!prompt.trim()) {
+      newErrors.prompt = 'Marketing theme is required';
+    }
+    if (!numImages) {
+      newErrors.numImages = 'Please select the number of images';
+    }
+    if (!contentType) {
+      newErrors.contentType = 'Please select a content type';
+    }
+    if (!platforms.instagram && !platforms.x && !platforms.linkedin) {
+      newErrors.platforms = 'Please select at least one platform';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log({
-      prompt,
-      numImages,
-      contentType,
-      platforms,
-      templateFile: templateFile ? templateFile.name : 'No file chosen',
-    });
+    if (validateForm()) {
+      console.log({
+        prompt,
+        numImages,
+        contentType,
+        platforms,
+        templateFile: templateFile ? templateFile.name : 'No file chosen',
+      });
+      // Later, this will send data to the backend
+      setErrors({}); // Clear errors on successful submission
+    }
   };
 
   return (
@@ -52,6 +75,7 @@ const ContentCreation = ({ user }) => {
               placeholder="E.g., Promote a new eco-friendly product"
               required
             />
+            {errors.prompt && <span className="error-message">{errors.prompt}</span>}
           </div>
           <div className="form-group">
             <label htmlFor="numImages">Number of Images</label>
@@ -66,6 +90,7 @@ const ContentCreation = ({ user }) => {
               <option value="2">2</option>
               <option value="3">3</option>
             </select>
+            {errors.numImages && <span className="error-message">{errors.numImages}</span>}
           </div>
           <div className="form-group">
             <label htmlFor="contentType">Content Type</label>
@@ -81,6 +106,7 @@ const ContentCreation = ({ user }) => {
               <option value="promotional">Promotional</option>
               <option value="educational">Educational</option>
             </select>
+            {errors.contentType && <span className="error-message">{errors.contentType}</span>}
           </div>
           <div className="form-group">
             <label>Platforms</label>
@@ -120,6 +146,7 @@ const ContentCreation = ({ user }) => {
                 All
               </button>
             </div>
+            {errors.platforms && <span className="error-message">{errors.platforms}</span>}
           </div>
           <div className="form-group">
             <label htmlFor="templateFile">Choose Template</label>
