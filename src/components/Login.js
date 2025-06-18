@@ -1,14 +1,35 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import './Login.css';
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // For now, just pass the username/password to the parent component
-    onLogin({ username, password });
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await axios.post('http://13.233.45.167:5000/user/login', { // Updated EC2 IP
+        username,
+        password,
+      });
+
+      const { token, user } = response.data;
+
+      localStorage.setItem('token', token);
+      setSuccess('Login successful! Redirecting...');
+
+      setTimeout(() => {
+        onLogin(user);
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Login failed. Please try again.');
+    }
   };
 
   return (
@@ -39,6 +60,8 @@ const Login = ({ onLogin }) => {
               required
             />
           </div>
+          {error && <span className="error-message">{error}</span>}
+          {success && <span className="success-message">{success}</span>}
           <button type="submit" className="login-button">Login</button>
         </form>
       </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import './ContentCreation.css';
 
 const ContentCreation = ({ user }) => {
@@ -10,8 +11,9 @@ const ContentCreation = ({ user }) => {
     x: false,
     linkedin: false,
   });
-  const [templateFile, setTemplateFile] = useState(null);
   const [errors, setErrors] = useState({});
+  const [responseMessage, setResponseMessage] = useState('');
+  const [isError, setIsError] = useState(false);
 
   const handlePlatformChange = (e) => {
     const { name, checked } = e.target;
@@ -44,18 +46,37 @@ const ContentCreation = ({ user }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      console.log({
-        prompt,
-        numImages,
-        contentType,
-        platforms,
-        templateFile: templateFile ? templateFile.name : 'No file chosen',
-      });
-      // Later, this will send data to the backend
-      setErrors({}); // Clear errors on successful submission
+      try {
+        const payload = {
+          prompt,
+          numImages,
+          contentType,
+          platforms,
+        };
+
+        const token = localStorage.getItem('token');
+
+        const response = await axios.post('http://13.233.45.167:5000/content/generate', payload, {  // Updated EC2 IP
+        
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        setResponseMessage('Content generated successfully!');
+        setIsError(false);
+        console.log('Backend Response:', response.data);
+
+        setErrors({});
+      } catch (err) {
+        setResponseMessage(err.response?.data?.error || 'Failed to generate content.');
+        setIsError(true);
+      }
     }
   };
 
@@ -101,10 +122,10 @@ const ContentCreation = ({ user }) => {
               required
             >
               <option value="" disabled>Choose content type</option>
-              <option value="informative">Informative</option>
-              <option value="inspirational">Inspirational</option>
-              <option value="promotional">Promotional</option>
-              <option value="educational">Educational</option>
+              <option value="Informative">Informative</option>
+              <option value="Inspirational">Inspirational</option>
+              <option value="Promotional">Promotional</option>
+              <option value="Educational">Educational</option>
             </select>
             {errors.contentType && <span className="error-message">{errors.contentType}</span>}
           </div>
@@ -148,19 +169,13 @@ const ContentCreation = ({ user }) => {
             </div>
             {errors.platforms && <span className="error-message">{errors.platforms}</span>}
           </div>
-          <div className="form-group">
-            <label htmlFor="templateFile">Choose Template</label>
-            <input
-              type="file"
-              id="templateFile"
-              onChange={(e) => setTemplateFile(e.target.files[0])}
-            />
-            <span className="file-name">
-              {templateFile ? templateFile.name : 'No file chosen'}
-            </span>
-          </div>
           <button type="submit" className="post-button">Post</button>
         </form>
+        {responseMessage && (
+          <p className={isError ? 'response-error' : 'response-success'}>
+            {responseMessage}
+          </p>
+        )}
       </div>
     </div>
   );

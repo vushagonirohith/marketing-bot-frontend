@@ -176,3 +176,19 @@
   margin-top: 0.5rem;
   text-shadow: 0 0 5px rgba(248, 113, 113, 0.3);
 }
+
+.response-success {
+  color: #2dd4bf;
+  font-size: 14px;
+  margin-top: 10px;
+  display: block;
+  text-shadow: 0 0 5px rgba(45, 212, 191, 0.3);
+}
+
+.response-error {
+  color: #f87171;
+  font-size: 14px;
+  margin-top: 10px;
+  display: block;
+  text-shadow: 0 0 5px rgba(248, 113, 113, 0.3);
+}
