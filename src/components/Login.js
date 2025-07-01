@@ -7,28 +7,28 @@ const Login = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-
+    setIsLoading(true);
     try {
-      const response = await axios.post('http://13.233.45.167:5000/user/login', { // Updated EC2 IP
+      const response = await axios.post('http://13.233.45.167:5000/user/login', {
         username,
         password,
       });
-
       const { token, user } = response.data;
-
       localStorage.setItem('token', token);
       setSuccess('Login successful! Redirecting...');
-
       setTimeout(() => {
         onLogin(user);
+        setIsLoading(false);
       }, 1500);
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
+      setIsLoading(false);
     }
   };
 
@@ -48,6 +48,7 @@ const Login = ({ onLogin }) => {
               placeholder="Enter your username"
               required
             />
+            {error && <span className="error-message">{error}</span>}
           </div>
           <div className="form-group">
             <label htmlFor="password">Password</label>
@@ -60,9 +61,10 @@ const Login = ({ onLogin }) => {
               required
             />
           </div>
-          {error && <span className="error-message">{error}</span>}
           {success && <span className="success-message">{success}</span>}
-          <button type="submit" className="login-button">Login</button>
+          <button type="submit" className="login-button" disabled={isLoading}>
+            {isLoading ? <span className="spinner"></span> : 'Login'}
+          </button>
         </form>
       </div>
     </div>

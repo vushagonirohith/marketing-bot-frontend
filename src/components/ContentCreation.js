@@ -14,6 +14,8 @@ const ContentCreation = ({ user }) => {
   const [errors, setErrors] = useState({});
   const [responseMessage, setResponseMessage] = useState('');
   const [isError, setIsError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastPayload, setLastPayload] = useState(null);
 
   const handlePlatformChange = (e) => {
     const { name, checked } = e.target;
@@ -21,24 +23,14 @@ const ContentCreation = ({ user }) => {
   };
 
   const handleSelectAll = () => {
-    setPlatforms({
-      instagram: true,
-      x: true,
-      linkedin: true,
-    });
+    setPlatforms({ instagram: true, x: true, linkedin: true });
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!prompt.trim()) {
-      newErrors.prompt = 'Marketing theme is required';
-    }
-    if (!numImages) {
-      newErrors.numImages = 'Please select the number of images';
-    }
-    if (!contentType) {
-      newErrors.contentType = 'Please select a content type';
-    }
+    if (!prompt.trim()) newErrors.prompt = 'Marketing theme is required';
+    if (!numImages) newErrors.numImages = 'Please select the number of images';
+    if (!contentType) newErrors.contentType = 'Please select a content type';
     if (!platforms.instagram && !platforms.x && !platforms.linkedin) {
       newErrors.platforms = 'Please select at least one platform';
     }
@@ -46,38 +38,47 @@ const ContentCreation = ({ user }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (validateForm()) {
+  const handleSubmit = async (e, isRetry = false) => {
+    e?.preventDefault();
+    if (validateForm() || isRetry) {
+      setIsLoading(true);
+      const payload = isRetry ? lastPayload : { prompt, numImages, contentType, platforms };
+      setLastPayload(payload);
       try {
-        const payload = {
-          prompt,
-          numImages,
-          contentType,
-          platforms,
-        };
-
         const token = localStorage.getItem('token');
-
-        const response = await axios.post('http://13.233.45.167:5000/content/generate', payload, {  // Updated EC2 IP
-        
+        const response = await axios.post(
+          'http://13.233.45.167:5000/content/generate',
+          payload,
+          {
             headers: {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           }
         );
-
         setResponseMessage('Content generated successfully!');
         setIsError(false);
+        setLastPayload(null);
         console.log('Backend Response:', response.data);
-
         setErrors({});
       } catch (err) {
         setResponseMessage(err.response?.data?.error || 'Failed to generate content.');
         setIsError(true);
+      } finally {
+        setIsLoading(false);
       }
     }
+  };
+
+  const handleReset = () => {
+    setPrompt('');
+    setNumImages('');
+    setContentType('');
+    setPlatforms({ instagram: false, x: false, linkedin: false });
+    setErrors({});
+    setResponseMessage('');
+    setIsError(false);
+    setLastPayload(null);
   };
 
   return (
@@ -159,23 +160,49 @@ const ContentCreation = ({ user }) => {
                 />
                 LinkedIn
               </label>
-              <button
-                type="button"
-                className="select-all-button"
-                onClick={handleSelectAll}
-              >
+              <button type="button" className="select-all-button" onClick={handleSelectAll}>
                 All
               </button>
             </div>
             {errors.platforms && <span className="error-message">{errors.platforms}</span>}
           </div>
-          <button type="submit" className="post-button">Post</button>
+          <div className="form-actions">
+            <button type="submit" className="post-button" disabled={isLoading}>
+              {isLoading ? <span className="spinner"></span> : 'Post'}
+            </button>
+            <button type="button" className="reset-button" onClick={handleReset}>
+              Reset
+            </button>
+          </div>
         </form>
         {responseMessage && (
-          <p className={isError ? 'response-error' : 'response-success'}>
-            {responseMessage}
-          </p>
+          <div className={isError ? 'response-error' : 'response-success'}>
+            <p>{responseMessage}</p>
+            {isError && (
+              <button
+                type="button"
+                className="retry-button"
+                onClick={() => handleSubmit(null, true)}
+                disabled={isLoading}
+              >
+                {isLoading ? <span className="spinner"></span> : 'Retry'}
+              </button>
+            )}
+          </div>
         )}
+        <div className="preview-container">
+          <h3>Preview</h3>
+          <div className="preview-content">
+            <p><strong>Theme</strong>: {prompt || 'Enter a theme'}</p>
+            <p><strong>Images</strong>: {numImages || 'Select number'}</p>
+            <p><strong>Type</strong>: {contentType || 'Select type'}</p>
+            <p>
+              <strong>Platforms</strong>: {Object.keys(platforms)
+                .filter((p) => platforms[p])
+                .join(', ') || 'Select platforms'}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
