@@ -15,7 +15,7 @@ const Login = ({ onLogin }) => {
     setSuccess('');
     setIsLoading(true);
     try {
-      const response = await axios.post('http://13.233.45.167:5000/user/login', {
+      const response = await axios.post('https://4fqbpp1yya.execute-api.ap-south-1.amazonaws.com/prod/user/login', {
         username,
         password,
       });
